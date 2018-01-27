@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { TabViewAnimated, TabBar, SceneMap } from 'react-native-tab-view';
+import {SpeechToText} from 'react-native-watson';
  
 
 import {
@@ -13,35 +14,126 @@ import {
 
 } from 'react-native';
 
-const width = Dimensions.get('window').width;
-const height = Dimensions.get('window').height;
+// const width = Dimensions.get('window').width;
+// const height = Dimensions.get('window').height;
 
 const StartStop = 0;
 
-const FirstRoute = () => <View style={[ styles.container, { backgroundColor: '#ff4081', height:300, width: Dimensions.get('window').width} ]} />;
-const SecondRoute = () => <View style={[ styles.container, { backgroundColor: '#673ab7',height:300, width: Dimensions.get('window').width} ]} />;
+// const FirstRoute = () => <View style={[ styles.container, { backgroundColor: '#ff4081', height:300, width: Dimensions.get('window').width} ]}>
+ // <Text style={[this.answerStyle()]}>{this.state.answer}</Text>
+      // </View>;
+// const SecondRoute = () => <View style={[ styles.container, { backgroundColor: '#673ab7',height:300, width: Dimensions.get('window').width} ]} />;
+
+const width = Dimensions.get('window').width;
+const height = Dimensions.get('window').height;
  
 
 
 export default class TabViewExample extends Component {
-  state = {
+    constructor(props){
+  super()
+
+  this.state = {
     index: 0,
     routes: [
       { key: '1', title: 'Pronunciation' },
       { key: '2', title: 'Grammar' },
     ],
+    sentence: 'She only paints with bold colours; she does not like pastels',
+    answer: 'Your answer will appear as you speak',
+    color:'red',
+    instruction: "Start Recording"
   };
  
+ this.onSpeechButtonPress = this.onSpeechButtonPress.bind(this)
+  this.onStopButtonPress = this.onStopButtonPress.bind(this)
+  this.FirstRoute  = this.FirstRoute.bind(this)
+  this.SecondRoute  = this.SecondRoute.bind(this)
+}
+
+
+ FirstRoute = () => <View style={[ styles.container, { backgroundColor: '#ff4081', height:300, width: width} ]}>
+ <Text style={this.answerStyle()}>{this.state.answer}</Text>
+      </View>;
+  SecondRoute = () => <View style={[ styles.container, { backgroundColor: '#673ab7',height:300, width: width} ]} />;
+ 
+
+
+
+onSpeechButtonPress() {
+        if(this.state.instruction=='Start Recording')
+        // will transcribe microphone audio/
+        {
+          SpeechToText.startStreaming((error, text) =>
+        {
+
+            if(text){
+              result = JSON.parse(text)
+          
+            word_confidence = result[0]['alternatives'][0]['word_confidence'] 
+            if(word_confidence){
+              this.setState({answer: ''})
+            for (var i = 0; i < word_confidence.length; i++)
+            {
+              for (var j = 0; j < word_confidence[i].length; j++)
+              {
+                    console.log('word_confidence[' + i + '][' + j + '] = ' + word_confidence[i][j]);
+                    pronounciation = word_confidence[i][j]
+                    if(j==1)
+                    {
+                      pronounciation = word_confidence[i][j]*100;
+                      if(pronounciation<50){this.setState({color:'yellow'})}
+                      else{this.setState({color:'blue'})}  
+                    }
+                    this.setState({answer: this.state.answer + pronounciation})
+                    console.log(this.state.answer)
+                    
+              }
+            }
+            }
+
+            }
+            else{
+              console.log(error)
+            }
+          })
+          this.setState({instruction: 'Stop Recording'})
+          console.log("Button Pressed");
+        }
+        else{
+          SpeechToText.stopStreaming()
+          this.setState({instruction: 'Start Recording'})
+          console.log("stop")      
+        }                
+
+    
+  };
+
+  onStopButtonPress() {
+    SpeechToText.stopStreaming()
+    console.log("stop")  
+  };
+  
+    answerStyle = () => {
+     return {
+      backgroundColor: this.state.color
+    }
+   }
+
+
   _handleIndexChange = index => this.setState({ index });
  
   _renderHeader = props => <TabBar {...props} />;
  
   _renderScene = SceneMap({
-    '1': FirstRoute,
-    '2': SecondRoute,
+    '1': this.FirstRoute,
+    '2': this.SecondRoute,
   });
 
   render() {
+    console.log("SpeechToText initialized")
+      SpeechToText.initialize("1f340809-9ea9-4eaa-9404-83042e08f853", "IwxHoB67AAJE")
+
     return (
 <View style={{flex:1,flexDirection: 'column'}}> 
     
@@ -81,11 +173,11 @@ export default class TabViewExample extends Component {
     </TouchableOpacity>
 
   </View>
-  <TouchableOpacity onPress={this._onPressButton}> 
-  <View style={{width: '80%', height: 45, marginLeft: '10%', backgroundColor:'#41cbc7',borderRadius:5,justifyContent:'center',alignItems:'center'}}>
-                        
+  <TouchableOpacity onPress={this.onSpeechButtonPress.bind(this)}> 
+  <View style={{width: '80%', height: 45, marginLeft: '10%', backgroundColor:'#41cbc7',borderRadius:5,justifyContent:'center',alignItems:'center'}}>    
+                             
     <Text style={{alignSelf:'center',justifyContent:'center',alignItems:'center'}}>
-    Start Recording
+    {this.state.instruction}
     </Text>
     </View>
     </TouchableOpacity>
@@ -95,7 +187,7 @@ export default class TabViewExample extends Component {
   
   <View style={{width:Dimensions.get('window').width, height: 30,alignItems:'flex-start',justifyContent:'center'}}>
     
-    <Text style={{fontSize:20,fontFamily: 'sans-serif-condensed',color:'#1E434C'}}>Report</Text>   
+    <Text style={{fontSize:20,fontFamily: 'sans-serif-condensed',color:'#1E434C'}}>Report:{this.state.answer}</Text>   
        
   </View>     
 

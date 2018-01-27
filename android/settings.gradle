@@ -1,3 +1,5 @@
 rootProject.name = 'module2'
+include ':react-native-watson'
+project(':react-native-watson').projectDir = new File(rootProject.projectDir, '../custom_modules/react-native-watson/android')
 
 include ':app'
