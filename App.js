@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { TabViewAnimated, TabBar, SceneMap } from 'react-native-tab-view';
 import {SpeechToText} from 'react-native-watson';
- 
+ import Grammar from './Grammar';
 
 import {
   Platform,
@@ -35,6 +35,8 @@ export default class TabViewExample extends Component {
 
   this.state = {
     index: 0,
+    grammerText: "random",
+    grammar: "",
     routes: [
       { key: '1', title: 'Pronunciation' },
       { key: '2', title: 'Grammar' },
@@ -52,15 +54,16 @@ export default class TabViewExample extends Component {
 }
 
 
- FirstRoute = () => <View style={[ styles.container, { backgroundColor: '#ff4081', height:300, width: width} ]}>
- <Text style={this.answerStyle()}>{this.state.answer}</Text>
-      </View>;
-  SecondRoute = () => <View style={[ styles.container, { backgroundColor: '#673ab7',height:300, width: width} ]} />;
+ FirstRoute = () => <Grammar grammar = {this.state.grammerText} />
+  SecondRoute = () => <View style={[ styles.container, { backgroundColor: '#673ab7',height:300, width: width} ]} >
+<Text style={this.answerStyle()}>{this.state.grammar}</Text>
+  </View>;
  
 
 
 
 onSpeechButtonPress() {
+  let grammerText = ""
         if(this.state.instruction=='Start Recording')
         // will transcribe microphone audio/
         {
@@ -68,6 +71,7 @@ onSpeechButtonPress() {
         {
 
             if(text){
+              console.log("Text",text)
               result = JSON.parse(text)
           
             word_confidence = result[0]['alternatives'][0]['word_confidence'] 
@@ -85,11 +89,33 @@ onSpeechButtonPress() {
                       if(pronounciation<50){this.setState({color:'yellow'})}
                       else{this.setState({color:'blue'})}  
                     }
-                    this.setState({answer: this.state.answer + pronounciation})
+                  else{
+                    
+                     grammerText =  grammerText + pronounciation + " ";
+                  }
+                    this.setState({answer: this.state.answer + ":" + pronounciation})
                     console.log(this.state.answer)
                     
               }
             }
+
+              fetch('https://8xzzaark26.execute-api.ap-south-1.amazonaws.com/final?text=' + grammerText, {
+              method: 'GET',
+              headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              },
+              }).then((response) => {
+              this.setState({
+              grammar: response._bodyText
+            });
+            }).catch((error) => {
+              console.error(error);
+            this.setState({
+          grammar: "Failed to connect to server!"
+          });
+          });
+  
             }
 
             }
@@ -145,7 +171,7 @@ onSpeechButtonPress() {
       <View style={{width:270}}>
 
         <TouchableOpacity onPress={this._onPressButton}>
-        <Text style={{textAlign:'center',alignSelf:'center',fontSize:20,fontWeight:'bold',color:'#063852',marginTop:10,fontFamily: 'sans-serif-condensed'}}> Grammar Check</Text>
+          <Text style={{textAlign:'center',alignSelf:'center',fontSize:20,fontWeight:'bold',color:'#063852',marginTop:10,fontFamily: 'sans-serif-condensed'}}> Grammar Check</Text>
         </TouchableOpacity>
       </View> 
     </View>
@@ -187,7 +213,7 @@ onSpeechButtonPress() {
   
   <View style={{width:Dimensions.get('window').width, height: 30,alignItems:'flex-start',justifyContent:'center'}}>
     
-    <Text style={{fontSize:20,fontFamily: 'sans-serif-condensed',color:'#1E434C'}}>Report:{this.state.answer}</Text>   
+    <Text style={{fontSize:20,fontFamily: 'sans-serif-condensed',color:'#1E434C'}}>Report:{this.state.answer}Grammar:{this.state.grammar}</Text>   
        
   </View>     
 
