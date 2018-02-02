@@ -51,6 +51,10 @@ export default class TabViewExample extends Component {
   this.onStopButtonPress = this.onStopButtonPress.bind(this)
   this.FirstRoute  = this.FirstRoute.bind(this)
   this.SecondRoute  = this.SecondRoute.bind(this)
+
+
+    this.onMicRelease = this.onMicRelease.bind(this);
+    this.onMicPress = this.onMicPress.bind(this);
 }
 
 
@@ -58,11 +62,20 @@ export default class TabViewExample extends Component {
   SecondRoute = () => <View style={[ styles.container, { backgroundColor: '#673ab7',height:300, width: width} ]} >
 <Text style={this.answerStyle()}>{this.state.grammar}</Text>
   </View>;
+
+    onMicPress = () => {
+        this.onSpeechButtonPress();
+    }
+    
+    onMicRelease = () => {
+        this.onStopButtonPress();
+    }
  
 
 
 
 onSpeechButtonPress() {
+  var ref = this;
   let grammerText = ""
         if(this.state.instruction=='Start Recording')
         // will transcribe microphone audio/
@@ -105,9 +118,11 @@ onSpeechButtonPress() {
               Accept: 'application/json',
               'Content-Type': 'application/json',
               },
-              }).then((response) => {
+            }).then((response) => {
+              
+              var toUpdate = ref.state.grammar + response._bodyText.substr(1,response._bodyText.length-1) + ". ";
               this.setState({
-              grammar: response._bodyText
+              grammar: toUpdate
             });
             }).catch((error) => {
               console.error(error);
@@ -137,6 +152,7 @@ onSpeechButtonPress() {
 
   onStopButtonPress() {
     SpeechToText.stopStreaming()
+    this.setState({instruction: 'Start Recording'})
     console.log("stop")  
   };
   
@@ -190,7 +206,7 @@ onSpeechButtonPress() {
   
   <View style={{width:Dimensions.get('window').width, height: 180, alignItems:'center',justifyContent:'center'}}>
 
-    <TouchableOpacity onPress={this._onPressButton}>
+    <TouchableOpacity onPressIn={this.onMicPress} onPressOut={this.onMicRelease}>
     <Image 
        style={{width: 140, height: 140}}
        source={require('./images/mic1.png')}
